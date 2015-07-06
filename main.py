@@ -3,9 +3,12 @@ import cv2, numpy as np
 cap = cv2.VideoCapture(0)
 acceptedPolygons = range(3, 7)
 
+showNames = False
+showAngles = False
+
 thresh = [50, 80]
 regPolygon = 15
-thickness = 2
+thickness = -1
 angle = lambda ((ax, ay), (bx, by)), ((cx, cy), (dx, dy)): ((np.arccos((((ax - bx) * (cx - dx)) + ((ay - by) * (cy - dy)))/(((ax - bx)**2 + (ay - by)**2)**0.5 * ((cx - dx)**2 + (cy - dy)**2)**0.5)))/np.pi)*180
 
 def ChangeThresh1(v):
@@ -15,11 +18,12 @@ def ChangeThresh2(v):
     thresh[1] = v
 
 def setLabel(im, text, contour):
-    labelSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
-    bx, by, bw, bh = cv2.boundingRect(contour)
-    x, y = (bx + (bw - labelSize[0][0])/2, (by + (bh + labelSize[0][1])/2)-10)
-    cv2.rectangle(im, (x, y), (x + labelSize[0][0], y - labelSize[0][1]), (255, 255, 255), -1)
-    cv2.putText(im, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
+    if showNames:
+        labelSize = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
+        bx, by, bw, bh = cv2.boundingRect(contour)
+        x, y = (bx + (bw - labelSize[0][0])/2, (by + (bh + labelSize[0][1])/2)-10)
+        cv2.rectangle(im, (x, y), (x + labelSize[0][0], y - labelSize[0][1]), (255, 255, 255), -1)
+        cv2.putText(im, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
 
 def recogShapes(src, shapesOnly = False):
     if shapesOnly:
@@ -52,11 +56,12 @@ def recogShapes(src, shapesOnly = False):
                         else:
                             color = (96, 174, 39)
                         cv2.drawContours(im, [cnt], -1, color, thickness)
-                        if np.fabs(a - 90) < 2:
-                            cv2.rectangle(im, (c[0] - 3, c[1] - 3), (c[0] + 3, c[1] + 3), (173, 68, 142), 2) #Right angle
-                        else:
-                            cv2.circle(im, (c[0], c[1]), 3, (173, 68, 142), 2)
-                            cv2.putText(im, str(round(a, 1)), (c[0], c[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
+                        if showAngles:
+                            if np.fabs(a - 90) < 2:
+                                cv2.rectangle(im, (c[0] - 3, c[1] - 3), (c[0] + 3, c[1] + 3), (173, 68, 142), 2) #Right angle
+                            else:
+                                cv2.circle(im, (c[0], c[1]), 3, (173, 68, 142), 2)
+                                cv2.putText(im, str(round(a, 1)), (c[0], c[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
                         setLabel(im, shapeName, cnt)
                 else: #Circle or Ellipse
                     rect = cv2.minAreaRect(cnt)
@@ -68,6 +73,7 @@ def recogShapes(src, shapesOnly = False):
 
     return im
 
+'''
 while True:
     ret, im = cap.read()
     cv2.imshow('Shapes', recogShapes(im.copy()))
@@ -75,4 +81,12 @@ while True:
     cv2.createTrackbar('Thresh2', 'Shapes', thresh[1], 300, ChangeThresh2)
     if cv2.waitKey(17) & 0xFF == ord('q'):
         break
+cv2.destroyAllWindows()
+'''
+
+im = cv2.imread('/home/nathan/Images/Shapes/detect-simple-shapes-src-img.png')
+cv2.imshow('Shapes', recogShapes(im.copy()))
+cv2.createTrackbar('Thresh1', 'Shapes', thresh[0], 300, ChangeThresh1)
+cv2.createTrackbar('Thresh2', 'Shapes', thresh[1], 300, ChangeThresh2)
+cv2.waitKey(0)
 cv2.destroyAllWindows()
