@@ -6,7 +6,7 @@ acceptedPolygons = range(3, 7)
 showNames = True
 showAngles = False
 
-shapeNames = ['point', 'line', 'tri', 'quad', 'penta', 'hepta', 'octa']
+shapeNames = ['point', 'line', 'tri', 'quad', 'penta', 'hexa', 'hepta', 'octa']
 
 thresh = [50, 80]
 regPolygon = 15
