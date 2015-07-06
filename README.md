@@ -15,4 +15,4 @@ Angles can be calculated and shapes drawn.
   - Red   -> Ellipse or Circle
 
 ![Before](http://i.imgur.com/z2t854x.png)
-![After](http://i.imgur.com/hzPo4B7.png)
+![After](http://i.imgur.com/0zZua7Q.png)
