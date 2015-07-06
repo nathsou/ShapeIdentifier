@@ -1,5 +1,6 @@
 # ShapeIdentifier
 Detect some shapes in an image thanks to opencv.
+  - requires **opencv** and **numpy**
 
 ![Example](http://i.imgur.com/9q7YBoH.png)
 
