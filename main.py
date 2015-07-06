@@ -3,8 +3,10 @@ import cv2, numpy as np
 cap = cv2.VideoCapture(0)
 acceptedPolygons = range(3, 7)
 
-showNames = False
+showNames = True
 showAngles = False
+
+shapeNames = ['point', 'line', 'tri', 'quad', 'penta', 'hepta', 'octa']
 
 thresh = [50, 80]
 regPolygon = 15
@@ -50,7 +52,10 @@ def recogShapes(src, shapesOnly = False):
                         a = angle(((c[0], c[1]), (p[0], p[1])), ((c[0], c[1]), (n[0], n[1])))
                         angles.append(a)
                         sides.append(((c[0] - p[0])**2 + (c[1] - p[1])**2)**0.5)
-                        shapeName = str(len(approx)) + '-agon'
+                        if len(approx) > len(shapeNames):
+                            shapeName = str(len(approx)) + '-agon'
+                        else:
+                            shapeName = shapeNames[len(approx) - 1]
                         if np.std(angles) < regPolygon and np.std(sides) < regPolygon: #It's a regular polygon
                             color = (185, 128, 41)
                         else:
@@ -73,7 +78,6 @@ def recogShapes(src, shapesOnly = False):
 
     return im
 
-'''
 while True:
     ret, im = cap.read()
     cv2.imshow('Shapes', recogShapes(im.copy()))
@@ -82,11 +86,4 @@ while True:
     if cv2.waitKey(17) & 0xFF == ord('q'):
         break
 cv2.destroyAllWindows()
-'''
 
-im = cv2.imread('/home/nathan/Images/Shapes/detect-simple-shapes-src-img.png')
-cv2.imshow('Shapes', recogShapes(im.copy()))
-cv2.createTrackbar('Thresh1', 'Shapes', thresh[0], 300, ChangeThresh1)
-cv2.createTrackbar('Thresh2', 'Shapes', thresh[1], 300, ChangeThresh2)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
