@@ -1,6 +1,8 @@
 # ShapeIdentifier
 Detect some shapes in an image thanks to opencv.
   - requires **opencv** and **numpy**
+  - 
+Angles can be calculated and shapes drawn.
 
 ![Example](http://i.imgur.com/9q7YBoH.png)
 
@@ -12,5 +14,5 @@ Detect some shapes in an image thanks to opencv.
   - Blue  -> Regular polygon
   - Red   -> Ellipse or Circle
 
-![Example](http://www.swintonfitzwilliam.org/wp-content/uploads/2013/09/shapes-2.jpg)
-![Example](http://i.imgur.com/SENoRFO.png)
+![Before](http://i.imgur.com/z2t854x.png)
+![After](http://i.imgur.com/hzPo4B7.png)
