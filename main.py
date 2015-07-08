@@ -8,16 +8,15 @@ showAngles = False
 
 shapeNames = ['point', 'line', 'tri', 'quad', 'penta', 'hexa', 'hepta', 'octa']
 
-thresh = [50, 80]
 regPolygon = 15
 thickness = -1
 angle = lambda ((ax, ay), (bx, by)), ((cx, cy), (dx, dy)): ((np.arccos((((ax - bx) * (cx - dx)) + ((ay - by) * (cy - dy)))/(((ax - bx)**2 + (ay - by)**2)**0.5 * ((cx - dx)**2 + (cy - dy)**2)**0.5)))/np.pi)*180
 
-def ChangeThresh1(v):
-    thresh[0] = v
-
-def ChangeThresh2(v):
-    thresh[1] = v
+def autoCanny(src, sigma=0.33):
+    med = np.median(src)
+    thresh1 = int(max(0, (1.0 - sigma) * med))
+    thresh2 = int(min(255, (1.0 + sigma) * med))
+    return cv2.Canny(src.copy(), thresh1, thresh2)
 
 def setLabel(im, text, contour):
     if showNames:
@@ -34,10 +33,11 @@ def recogShapes(src, shapesOnly = False):
     else:
         im = src
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(gray, thresh[0], thresh[1])
+    edges = autoCanny(gray)
     cv2.equalizeHist(edges, edges)
     cv2.blur(edges, (2, 2), edges)
-    (cnts, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    (cnts, _) = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
     for cnt in cnts:
         if cv2.contourArea(cnt) > 100:
             approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
@@ -81,9 +81,6 @@ def recogShapes(src, shapesOnly = False):
 while True:
     ret, im = cap.read()
     cv2.imshow('Shapes', recogShapes(im.copy()))
-    cv2.createTrackbar('Thresh1', 'Shapes', thresh[0], 300, ChangeThresh1)
-    cv2.createTrackbar('Thresh2', 'Shapes', thresh[1], 300, ChangeThresh2)
     if cv2.waitKey(17) & 0xFF == ord('q'):
         break
 cv2.destroyAllWindows()
-
