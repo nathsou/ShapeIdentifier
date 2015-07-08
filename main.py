@@ -13,7 +13,7 @@ acceptedPolygons = range(3, 7)
 
 shapeNames = ['point', 'line', 'tri', 'quad', 'penta', 'hexa', 'hepta', 'octa']
 
-regPolygon = 15
+regPolygon = 10
 thickness = -1
 if not args['thickness'] is None:
     thickness = int(args['thickness'])
@@ -45,12 +45,7 @@ def recogShapes(src, shapesOnly = False):
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     edges = autoCanny(gray)
     cv2.blur(edges, (2, 2), edges)
-    if thickness == -1:
-        method = cv2.RETR_TREE
-    else:
-        method = cv2.RETR_EXTERNAL
-    (cnts, _) = cv2.findContours(edges, method, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
+    (cnts, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in cnts:
         if cv2.contourArea(cnt) > 100:
             approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
