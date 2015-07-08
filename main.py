@@ -44,7 +44,10 @@ def recogShapes(src, shapesOnly = False):
         im = src
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     edges = autoCanny(gray)
-    cv2.blur(edges, (2, 2), edges)
+    s = int(round(np.std(gray)/20))
+    print s
+    cv2.blur(edges, (s, s), edges)
+    cv2.imshow('edges', edges)
     (cnts, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in cnts:
         if cv2.contourArea(cnt) > 100:
@@ -82,7 +85,7 @@ def recogShapes(src, shapesOnly = False):
                     rect = cv2.minAreaRect(cnt)
                     cv2.ellipse(im, rect, (43, 57, 192), thickness)
                     shape = 'ellipse'
-                    if np.fabs(1 - rect[1][0]/rect[1][1]) < 0.1:
+                    if np.fabs(1 - rect[1][0]/rect[1][1]) < 0.15:
                         shape = 'circle'
                     setLabel(im, shape, cnt)
 
