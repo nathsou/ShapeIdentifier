@@ -1,21 +1,31 @@
-import cv2, numpy as np, sys
+import cv2, numpy as np, argparse
+
+ap = argparse.ArgumentParser()
+ap.add_argument("-s", "--source", required=False, help="Source image path")
+ap.add_argument("-o", "--output", required=False, help="Destination image path")
+ap.add_argument("-t", "--thickness", required=False, help="Trait thickness", type=int)
+ap.add_argument("-a", "--showAngles", required=False, action='store_true')
+ap.add_argument("-n", "--showShapesName", required=False, action='store_true')
+ap.add_argument("-v", "--verbose", required=False, action='store_true', help="Displays detected shapes's vertices")
+args = vars(ap.parse_args())
 
 acceptedPolygons = range(3, 7)
-
-showNames = True
-showAngles = False
 
 shapeNames = ['point', 'line', 'tri', 'quad', 'penta', 'hexa', 'hepta', 'octa']
 
 regPolygon = 15
 thickness = -1
+if not args['thickness'] is None:
+    thickness = int(args['thickness'])
+showNames = not args['showShapesName']
+showAngles = args['showAngles']
+
 angle = lambda ((ax, ay), (bx, by)), ((cx, cy), (dx, dy)): ((np.arccos((((ax - bx) * (cx - dx)) + ((ay - by) * (cy - dy)))/(((ax - bx)**2 + (ay - by)**2)**0.5 * ((cx - dx)**2 + (cy - dy)**2)**0.5)))/np.pi)*180
 
 def autoCanny(src, sigma=0.33):
     med = np.median(src)
     thresh1 = int(max(0, (1.0 - sigma) * med))
     thresh2 = int(min(255, (1.0 + sigma) * med))
-    print str(thresh1) + ' ' + str(thresh2)
     return cv2.Canny(src.copy(), thresh1, thresh2)
 
 def setLabel(im, text, contour):
@@ -55,21 +65,23 @@ def recogShapes(src, shapesOnly = False):
                         a = angle(((c[0], c[1]), (p[0], p[1])), ((c[0], c[1]), (n[0], n[1])))
                         angles.append(a)
                         sides.append(((c[0] - p[0])**2 + (c[1] - p[1])**2)**0.5)
+                        if showAngles:
+                            if np.fabs(a - 90) < 2:
+                                cv2.rectangle(im, (c[0] - 3, c[1] - 3), (c[0] + 3, c[1] + 3), (173, 68, 142), 2) #Right angle
+                            else:
+                                cv2.circle(im, (c[0], c[1]), 3, (173, 68, 142), 2)
+                                cv2.putText(im, str(round(a, 1)), (c[0], c[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
                     if len(approx) > len(shapeNames):
                         shapeName = str(len(approx)) + '-agon'
                     else:
                         shapeName = shapeNames[len(approx) - 1]
+                    if args['verbose']:
+                        print shapeName + ' ' + str([(p[0][0], p[0][1]) for p in approx])
                     if np.std(angles) < regPolygon and np.std(sides) < regPolygon: #It's a regular polygon
                         color = (185, 128, 41)
                     else:
                         color = (96, 174, 39)
                     cv2.drawContours(im, [cnt], -1, color, thickness)
-                    if showAngles:
-                        if np.fabs(a - 90) < 2:
-                            cv2.rectangle(im, (c[0] - 3, c[1] - 3), (c[0] + 3, c[1] + 3), (173, 68, 142), 2) #Right angle
-                        else:
-                            cv2.circle(im, (c[0], c[1]), 3, (173, 68, 142), 2)
-                            cv2.putText(im, str(round(a, 1)), (c[0], c[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
                     setLabel(im, shapeName, cnt)
                 else: #Circle or Ellipse
                     rect = cv2.minAreaRect(cnt)
@@ -81,7 +93,7 @@ def recogShapes(src, shapesOnly = False):
 
     return im
 
-if len(sys.argv) < 2:
+if args['source'] is None:
     cap = cv2.VideoCapture(0)
     while True:
         ret, im = cap.read()
@@ -90,7 +102,10 @@ if len(sys.argv) < 2:
             break
     cv2.destroyAllWindows()
 else:
-    im = cv2.imread(sys.argv[1])
-    cv2.imshow('Shapes', recogShapes(im))
+    im = cv2.imread(args['source'])
+    out = recogShapes(im)
+    cv2.imshow('Shapes', out)
+    if not args['output'] is None:
+        cv2.imwrite(args['output'], out)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
