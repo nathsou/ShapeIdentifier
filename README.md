@@ -16,3 +16,7 @@ Detect some shapes in an image thanks to opencv.
 if no **-s** *(source image path)* paramater is given, the script will try to capture from a webcam:
 
 ![Gameboy](http://nathsou.fr/iup/u/e053-Capture_du_2015-07-08_17:11:06.png)
+
+The default thickness value is -1 *(filled)*, you can change with the *-t* parameter:
+
+![RaspberryPi](http://nathsou.fr/iup/u/8c67-Capture_du_2015-07-08_17:20:13.png)
