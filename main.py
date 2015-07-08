@@ -26,7 +26,7 @@ def autoCanny(src, sigma=0.33):
     med = np.median(src)
     thresh1 = int(max(0, (1.0 - sigma) * med))
     thresh2 = int(min(255, (1.0 + sigma) * med))
-    return cv2.Canny(src.copy(), thresh1, thresh2)
+    return cv2.Canny(src, thresh1, thresh2)
 
 def setLabel(im, text, contour):
     if showNames:
@@ -44,13 +44,15 @@ def recogShapes(src, shapesOnly = False):
         im = src
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     edges = autoCanny(gray)
-    s = int(round(np.std(gray)/20))
-    print s
-    cv2.blur(edges, (s, s), edges)
-    cv2.imshow('edges', edges)
-    (cnts, _) = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    #cv2.blur(edges, (2, 2), edges)
+    if thickness is -1:
+        method = cv2.RETR_TREE
+    else:
+        method = cv2.RETR_EXTERNAL
+    (cnts, _) = cv2.findContours(edges, method, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
     for cnt in cnts:
-        if cv2.contourArea(cnt) > 100:
+        if cv2.contourArea(cnt) > 750:
             approx = cv2.approxPolyDP(cnt, 0.02 * cv2.arcLength(cnt, True), True)
             if cv2.isContourConvex(approx):
                 if len(approx) in acceptedPolygons:
@@ -79,7 +81,13 @@ def recogShapes(src, shapesOnly = False):
                         color = (185, 128, 41)
                     else:
                         color = (96, 174, 39)
-                    cv2.drawContours(im, [cnt], -1, color, thickness)
+                    for i in range(len(approx)):
+                        c = approx[i][0]
+                        n = approx[(i + 1) % len(approx)][0]
+                        if thickness is -1:
+                            cv2.drawContours(im, [cnt], -1, color, thickness)
+                        else:
+                            cv2.line(im, (c[0], c[1]), (n[0], n[1]), color, thickness)
                     setLabel(im, shapeName, cnt)
                 else: #Circle or Ellipse
                     rect = cv2.minAreaRect(cnt)
@@ -92,10 +100,10 @@ def recogShapes(src, shapesOnly = False):
     return im
 
 if args['source'] is None:
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(-1)
     while True:
         ret, im = cap.read()
-        cv2.imshow('Shapes', recogShapes(im.copy()))
+        cv2.imshow('Shapes', recogShapes(im))
         if cv2.waitKey(17) & 0xFF == ord('q'):
             break
     cv2.destroyAllWindows()
