@@ -1,6 +1,5 @@
-import cv2, numpy as np
+import cv2, numpy as np, sys
 
-cap = cv2.VideoCapture(0)
 acceptedPolygons = range(3, 7)
 
 showNames = True
@@ -16,6 +15,7 @@ def autoCanny(src, sigma=0.33):
     med = np.median(src)
     thresh1 = int(max(0, (1.0 - sigma) * med))
     thresh2 = int(min(255, (1.0 + sigma) * med))
+    print str(thresh1) + ' ' + str(thresh2)
     return cv2.Canny(src.copy(), thresh1, thresh2)
 
 def setLabel(im, text, contour):
@@ -34,9 +34,12 @@ def recogShapes(src, shapesOnly = False):
         im = src
     gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
     edges = autoCanny(gray)
-    cv2.equalizeHist(edges, edges)
     cv2.blur(edges, (2, 2), edges)
-    (cnts, _) = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if thickness == -1:
+        method = cv2.RETR_TREE
+    else:
+        method = cv2.RETR_EXTERNAL
+    (cnts, _) = cv2.findContours(edges, method, cv2.CHAIN_APPROX_SIMPLE)
     cnts = sorted(cnts, key = cv2.contourArea, reverse = True)
     for cnt in cnts:
         if cv2.contourArea(cnt) > 100:
@@ -52,22 +55,22 @@ def recogShapes(src, shapesOnly = False):
                         a = angle(((c[0], c[1]), (p[0], p[1])), ((c[0], c[1]), (n[0], n[1])))
                         angles.append(a)
                         sides.append(((c[0] - p[0])**2 + (c[1] - p[1])**2)**0.5)
-                        if len(approx) > len(shapeNames):
-                            shapeName = str(len(approx)) + '-agon'
+                    if len(approx) > len(shapeNames):
+                        shapeName = str(len(approx)) + '-agon'
+                    else:
+                        shapeName = shapeNames[len(approx) - 1]
+                    if np.std(angles) < regPolygon and np.std(sides) < regPolygon: #It's a regular polygon
+                        color = (185, 128, 41)
+                    else:
+                        color = (96, 174, 39)
+                    cv2.drawContours(im, [cnt], -1, color, thickness)
+                    if showAngles:
+                        if np.fabs(a - 90) < 2:
+                            cv2.rectangle(im, (c[0] - 3, c[1] - 3), (c[0] + 3, c[1] + 3), (173, 68, 142), 2) #Right angle
                         else:
-                            shapeName = shapeNames[len(approx) - 1]
-                        if np.std(angles) < regPolygon and np.std(sides) < regPolygon: #It's a regular polygon
-                            color = (185, 128, 41)
-                        else:
-                            color = (96, 174, 39)
-                        cv2.drawContours(im, [cnt], -1, color, thickness)
-                        if showAngles:
-                            if np.fabs(a - 90) < 2:
-                                cv2.rectangle(im, (c[0] - 3, c[1] - 3), (c[0] + 3, c[1] + 3), (173, 68, 142), 2) #Right angle
-                            else:
-                                cv2.circle(im, (c[0], c[1]), 3, (173, 68, 142), 2)
-                                cv2.putText(im, str(round(a, 1)), (c[0], c[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
-                        setLabel(im, shapeName, cnt)
+                            cv2.circle(im, (c[0], c[1]), 3, (173, 68, 142), 2)
+                            cv2.putText(im, str(round(a, 1)), (c[0], c[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1)
+                    setLabel(im, shapeName, cnt)
                 else: #Circle or Ellipse
                     rect = cv2.minAreaRect(cnt)
                     cv2.ellipse(im, rect, (43, 57, 192), thickness)
@@ -78,9 +81,16 @@ def recogShapes(src, shapesOnly = False):
 
     return im
 
-while True:
-    ret, im = cap.read()
-    cv2.imshow('Shapes', recogShapes(im.copy()))
-    if cv2.waitKey(17) & 0xFF == ord('q'):
-        break
-cv2.destroyAllWindows()
+if len(sys.argv) < 2:
+    cap = cv2.VideoCapture(0)
+    while True:
+        ret, im = cap.read()
+        cv2.imshow('Shapes', recogShapes(im.copy()))
+        if cv2.waitKey(17) & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
+else:
+    im = cv2.imread(sys.argv[1])
+    cv2.imshow('Shapes', recogShapes(im))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
